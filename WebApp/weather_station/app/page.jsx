@@ -39,14 +39,16 @@ export default function Home() {
 		<MDBContainer className="h-100">
         	<MDBRow className="justify-content-center align-items-center h-100">
 				{weatherData.map((data, index) => (
-            	<WeatherWidget
-            	  key={index}
-            	  location={data.location}
-            	  temp={data.temp}
-            	  humid={data.humid}
-            	  time={data.time}
-            	  raining={data.raining}
-            	/>))}
+            		<WeatherWidget
+            		  key={index}
+            		  location={data.location}
+            		  temp={data.temp}
+            		  humid={data.humid}
+            		  time={data.time}
+            		  raining={data.raining}
+            		/>
+				))
+				}
 			</MDBRow>
 		</MDBContainer>
 	</section>

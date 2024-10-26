@@ -2,14 +2,17 @@ from flask import Flask
 import paho.mqtt.client as mqtt 
 import json
 import threading
+from dotenv import load_dotenv
+import os
 
+load_dotenv(dotenv_path='.env')
 app = Flask(__name__)
-app.config["SECRET_KEY"] = "hahabitch"
+app.config["SECRET_KEY"] = os.getenv('SECRET_KEY')
 
 # MQTT settings
-MQTT_BROKER = "broker.hivemq.com"  
+MQTT_BROKER = os.getenv('MQTT_BROKER_URL')  
 MQTT_PORT = 1883
-MQTT_TOPIC = "ET/weather"
+MQTT_TOPIC = os.getenv('MQTT_TOPIC')  
 
 # MQTT client callback functions
 def on_connect(client, userdata, flags, rc):

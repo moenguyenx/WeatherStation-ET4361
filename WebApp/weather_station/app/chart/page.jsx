@@ -1,61 +1,40 @@
 "use client"
 import React from "react";
 import Navbar from "@/components/navbar";
-import dynamic from 'next/dynamic';
-import 'chart.js/auto';
-const Line = dynamic(() => import('react-chartjs-2').then((mod) => mod.Line), {
-  ssr: false,
-});
+import {
+	MDBContainer,
+	MDBRow,
+  } from "mdb-react-ui-kit";
 import 'mdb-react-ui-kit/dist/css/mdb.min.css';
+import LineChart from "@/components/chart";
 
 export default function Chart() {
   const data = {
     labels: ['January', 'February', 'March', 'April', 'May'],
     datasets: [
       {
-        label: 'Line Chart',
-        data: [65, 59, 80, 81, 56],
-        fill: false,
-        borderColor: 'rgb(75, 192, 192)',
-        tension: 0.1,
+        label: 'HD',
+        data: [38, 37, 35, 34, 32]
+      },
+      {
+        label: 'LB',
+        data: [37, 36, 34, 36, 33]
+      },
+      {
+        label: 'HBT',
+        data: [36, 35, 36, 35, 31]
       },
     ],
-  };
-
-  const options = {
-    plugins: {
-      legend: {
-        labels: {
-          color: 'white', // Set legend text color to white
-        },
-      },
-    },
-    scales: {
-      x: {
-        ticks: {
-          color: 'white', // Set x-axis text color to white
-        },
-        grid: {
-          color: 'rgba(255, 255, 255, 0.2)', // Light white grid color
-        },
-      },
-      y: {
-        ticks: {
-          color: 'white', // Set y-axis text color to white
-        },
-        grid: {
-          color: 'rgba(255, 255, 255, 0.2)', // Light white grid color
-        },
-      },
-    },
   };
   return (
       <section className="vh-100" style={{ backgroundColor: "#4B515D" }}>
         <Navbar></Navbar>
-        <div style={{ width: '700px', height: '700px', color: 'white', margin: 'auto', textAlign: 'center' }}>
-          <h1>Example 1: Line Chart</h1>
-          <Line data={data} options={options}/>
-        </div>
+        <MDBContainer className="h-700 mt-3">
+          <MDBRow className="justify-content-center align-items-center h-100">
+            <LineChart data={data} chartName="Temp"></LineChart>
+            <LineChart data={data} chartName="Humid"></LineChart>
+          </MDBRow>
+        </MDBContainer>
       </section>
   );
 }
