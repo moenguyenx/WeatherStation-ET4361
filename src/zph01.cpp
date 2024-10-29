@@ -1,51 +1,36 @@
 #include "zph01.h"
 
 // Constructor to initialize RX, TX pins and baud rate
-ZPH01Sensor::ZPH01Sensor(int rxPin, int txPin, long baudRate) 
+void ZPH01_init(int TX_PIN, int RX_PIN, long BAUD_RATE) 
 {
-    _rxPin = rxPin;
-    _txPin = txPin;
-    _baudRate = baudRate;
-    serialPort = &Serial1; // Using UART1 on ESP32
-}
-
-// Initialize UART communication
-void ZPH01Sensor::begin() 
-{
-    serialPort->begin(_baudRate, SERIAL_8N1, _rxPin, _txPin);
+    Serial1.begin(BAUD_RATE, SERIAL_8N1, RX_PIN, TX_PIN); // Using UART1 on ESP32
 }
 
 // Read PM2.5 concentration
-float ZPH01Sensor::readPM25() 
+float ZPH01_ReadPM25() 
 {
-    if (serialPort->available() >= 9) 
+    if (Serial1.available()) 
     {
-      // Read 9 bytes from the sensor
-      for (int i = 0; i < 9; i++) 
-      {
-            data[i] = serialPort->read();
-      } 
-      // Validate data frame
-      if (data[0] == 0xFF && data[1] == 0x18) 
-      {
+        Serial1.readBytes(data, BUFFER_LENGTH);
+        // Read 9 bytes from the sensor
+        if (data[0] == 0xFF && data[1] == 0x18) 
+        {
             float dutyCycle = parseDutyCycle();
-            return calculatePM25(dutyCycle);
-      }
+            return calculatePM25(dutyCycle); // Return calculated PM2.5 concentration
+        }
     }
     return -1.0; // Return -1 if invalid data
 }
 
-// Parse duty cycle from sensor data
-float ZPH01Sensor::parseDutyCycle() 
+float parseDutyCycle() 
 {
-    int integerPart = data[3];   // Byte 3: Integer part of low pulse rate
-    int decimalPart = data[4];   // Byte 4: Decimal part of low pulse rate
-    return integerPart + (decimalPart / 100.0); // Combine to get duty cycle
+    // Duty cycle is in data[3] and data[4] according to ZPH01 datasheet
+    float dutyCycle = data[3] + ( data[4] / 100.0 );  // Combine high and low bytes
+    return dutyCycle / 100 ;          
 }
 
-// Calculate PM2.5 concentration based on duty cycle
-float ZPH01Sensor::calculatePM25(float dutyCycle)
+float calculatePM25(float dutyCycle) 
 {
-    float k = 1.0;  // Empirical coefficient (adjust as needed)
+    float k = 1000;  // Empirical coefficient (adjust as needed)
     return dutyCycle * k; // PM2.5 concentration formula
 }

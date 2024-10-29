@@ -11,6 +11,7 @@
 /*======================================================================================================================
  *                                              DEFINES AND MACROS
 ======================================================================================================================*/
+#define BUFFER_LENGTH 9
 /*======================================================================================================================
  *                                                      ENUMS
 ======================================================================================================================*/
@@ -21,32 +22,35 @@
 /*======================================================================================================================
  *                                              GLOBAL VARIABLE DECLARATIONS
 ======================================================================================================================*/
-
+uint8_t data[BUFFER_LENGTH]; //Buffer for sensor data
 /*======================================================================================================================
  *                                                  FUNCTION PROTOTYPES
 ======================================================================================================================*/
 
-class ZPH01Sensor 
-{
-  public:
-    // Constructor
-    ZPH01Sensor(int rxPin, int txPin, long baudRate);
+/**
+ * @brief Initialize ZPH01 serial communication
+ * 
+ */
+void ZPH01_init(int TX_PIN, int RX_PIN, long BAUD_RATE);
 
-    // Initialize UART communication with the sensor
-    void begin();
+/**
+ * @brief Reads PM2.5 concentration from the ZPH01 sensor.
+ * 
+ * @return float - The PM2.5 concentration in µg/m3, or -1.0 if data is invalid.
+ */
+float ZPH01_ReadPM25();
 
-    // Read PM2.5 concentration in µg/m3
-    float readPM25();
+/**
+ * @brief Parses the duty cycle from the sensor data.
+ * 
+ * @return float - The parsed duty cycle in percentage
+ */
+float parseDutyCycle();
 
-  private:
-    HardwareSerial* serialPort;
-    int _rxPin, _txPin;
-    long _baudRate;
-    uint8_t data[9]; // Buffer to hold sensor data
-
-    // Parse duty cycle from sensor data
-    float parseDutyCycle();
-
-    // Calculate PM2.5 concentration based on duty cycle
-    float calculatePM25(float dutyCycle);
-};
+/**
+ * @brief Calculates PM2.5 concentration based on the duty cycle.
+ * 
+ * @param dutyCycle - The duty cycle obtained from the sensor data.
+ * @return float - The calculated PM2.5 concentration in µg/m3.
+ */
+float calculatePM25(float dutyCycle);
