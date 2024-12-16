@@ -1,13 +1,25 @@
-from flask import Flask
+from flask import Flask, jsonify
+from pymongo import MongoClient
 import paho.mqtt.client as mqtt 
 import json
 import threading
 from dotenv import load_dotenv
+from datetime import datetime, timedelta
+import random
 import os
 
 load_dotenv(dotenv_path='.env')
 app = Flask(__name__)
+client = MongoClient(f"{os.getenv('MONGO_URI')}")
 app.config["SECRET_KEY"] = os.getenv('SECRET_KEY')
+
+# Create DB
+db = client["WeatherData"]
+# choose collection
+collection = db["records"]
+HBTcollection = db["hbt"]
+LBcollection = db["lb"]
+HDcollection = db['hd']
 
 # MQTT settings
 MQTT_BROKER = os.getenv('MQTT_BROKER_URL')  
@@ -35,13 +47,20 @@ def on_message(client, userdata, msg):
     message = json.loads(msg.payload.decode("utf-8"))
 
     stationCode = message["stationCode"]
-
+    data = {
+        "temp": message["temp"],
+        "hum": message["hum"],
+        "pm25": message["pm25"]
+    }
     if stationCode == 0:
         print("Long Bien Station")
+        LBcollection.insert_one(data)
     elif stationCode == 1:
         print("Hai Ba Trung station")
+        HBTcollection.insert_one(data)
     elif stationCode == 2:
         print("Ha Dong Station")
+        HDcollection.insert_one(data)
     else:
         print("Invalid Station")
     
@@ -51,6 +70,41 @@ def on_message(client, userdata, msg):
 @app.route('/')
 def home():
     return "MQTT Subscriber is running..."
+
+# Tạo route API
+@app.route("/latest", methods=["GET"])
+def get_latest_weather():
+    """Lấy dữ liệu thời tiết gần nhất"""
+    latest = collection.find_one(sort=[("timestamp", -1)])  # Sắp xếp theo thời gian giảm dần
+    if latest:
+        latest["_id"] = str(latest["_id"])  # Chuyển ObjectId sang string để JSON hóa
+        return jsonify(latest), 200
+    return jsonify({"error": "No data found"}), 404
+
+@app.route("/latest10", methods=["GET"])
+def get_latest_10_weather():
+    """Lấy 10 dữ liệu thời tiết gần nhất"""
+    latest_10 = list(collection.find(sort=[("timestamp", -1)]).limit(10))
+    for record in latest_10:
+        record["_id"] = str(record["_id"])  # Chuyển ObjectId sang string
+    if latest_10:
+        return jsonify(latest_10), 200
+    return jsonify({"error": "No data found"}), 404
+
+@app.route("/add_fake_data", methods=["POST"])
+def add_fake_data():
+    """Thêm dữ liệu giả lập vào MongoDB"""
+    locations = ["Hanoi", "Ho Chi Minh City", "Da Nang"]
+    for _ in range(10):  # Tạo 10 bản ghi
+        data = {
+            "timestamp": datetime.utcnow() - timedelta(minutes=random.randint(0, 500)),
+            "temperature": round(random.uniform(20, 35), 1),
+            "humidity": round(random.uniform(40, 90), 1),
+            "wind_speed": round(random.uniform(0, 20), 1),
+            "location": random.choice(locations)
+        }
+        collection.insert_one(data)
+    return jsonify({"message": "Fake data added"}), 201
 
 # Function to run the MQTT client in a separate thread
 def run_mqtt_client():

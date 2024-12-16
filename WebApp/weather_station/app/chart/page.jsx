@@ -10,19 +10,19 @@ import LineChart from "@/components/chart";
 
 export default function Chart() {
   const data = {
-    labels: ['January', 'February', 'March', 'April', 'May'],
+    labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
     datasets: [
       {
         label: 'HD',
-        data: [38, 37, 35, 34, 32]
+        data: [38, 37, 35, 34, 32, 21, 20]
       },
       {
         label: 'LB',
-        data: [37, 36, 34, 36, 33]
+        data: [37, 36, 34, 36, 33, 20, 19]
       },
       {
         label: 'HBT',
-        data: [36, 35, 36, 35, 31]
+        data: [36, 35, 36, 35, 32, 21, 19]
       },
     ],
   };
