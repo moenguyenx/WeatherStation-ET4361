@@ -4,7 +4,7 @@ import paho.mqtt.client as mqtt
 import json
 import threading
 from dotenv import load_dotenv
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import random
 import os
 
@@ -37,20 +37,23 @@ def on_connect(client, userdata, flags, rc):
 def on_message(client, userdata, msg):
     '''
     Hai Ba Trung station
-    {'stationCode': 1, 'temp': 21, 'hum': 100}
+    {"stationCode": 1, "temp": 21, "hum": 100, "pm25": 20, "raining": 1}
+    # 1 for True and 0 for False
     Ha Dong Station
-    {'stationCode': 2, 'temp': 21, 'hum': 100}
+    {"stationCode": 2, "temp": 21, "hum": 100, "pm25": 20, "raining": 1}
     Long Bien Station
-    {'stationCode': 0, 'temp': 21, 'hum': 100}
+    {"stationCode": 0, "temp": 21, "hum": 100, "pm25": 20, "raining": 1}
     '''
     topic = msg.topic
     message = json.loads(msg.payload.decode("utf-8"))
 
-    stationCode = message["stationCode"]
+    stationCode = int(message["stationCode"])
     data = {
-        "temp": message["temp"],
-        "hum": message["hum"],
-        "pm25": message["pm25"]
+        "timestamp": datetime.now(timezone.utc),
+        "temp": int(message["temp"]),
+        "hum": int(message["hum"]),
+        "pm25": int(message["pm25"]),
+        "raining": int(message["raining"])
     }
     if stationCode == 0:
         print("Long Bien Station")
@@ -76,15 +79,29 @@ def home():
 def get_latest_weather():
     """Lấy dữ liệu thời tiết gần nhất"""
     latest = collection.find_one(sort=[("timestamp", -1)])  # Sắp xếp theo thời gian giảm dần
-    if latest:
-        latest["_id"] = str(latest["_id"])  # Chuyển ObjectId sang string để JSON hóa
-        return jsonify(latest), 200
+    LBlatest = LBcollection.find_one(sort=[("timestamp", -1)])
+    LBlatest["location"] = "Long Bien"
+    HBTlatest = HBTcollection.find_one(sort=[("timestamp", -1)])
+    HBTlatest["location"] = "Hai Ba Trung"
+    HDlatest = HDcollection.find_one(sort=[("timestamp", -1)])
+    HDlatest["location"] = "Ha Dong"
+    
+    if LBlatest and HBTlatest and HDlatest:
+        latest["_id"] = str(latest["_id"])
+        LBlatest["_id"] = str(LBlatest["_id"])  # Chuyển ObjectId sang string để JSON hóa
+        HBTlatest["_id"] = str(HBTlatest["_id"])
+        HDlatest["_id"] = str(HDlatest["_id"])
+        currentData = [LBlatest, HBTlatest, HDlatest]
+        return jsonify(currentData), 200
     return jsonify({"error": "No data found"}), 404
 
 @app.route("/latest10", methods=["GET"])
 def get_latest_10_weather():
     """Lấy 10 dữ liệu thời tiết gần nhất"""
     latest_10 = list(collection.find(sort=[("timestamp", -1)]).limit(10))
+    LBlatest_10 = list(LBcollection.find(sort=[("timestamp", -1)]).limit(10))
+    HBTlatest_10 = list(HBTcollection.find(sort=[("timestamp", -1)]).limit(10))
+    HDlatest_10 = list(HDcollection.find(sort=[("timestamp", -1)]).limit(10))
     for record in latest_10:
         record["_id"] = str(record["_id"])  # Chuyển ObjectId sang string
     if latest_10:
