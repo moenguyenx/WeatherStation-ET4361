@@ -5,11 +5,13 @@ import json
 import threading
 from dotenv import load_dotenv
 from datetime import datetime, timedelta, timezone
+from flask_cors import CORS
 import random
 import os
 
 load_dotenv(dotenv_path='.env')
 app = Flask(__name__)
+CORS(app)
 client = MongoClient(f"{os.getenv('MONGO_URI')}")
 app.config["SECRET_KEY"] = os.getenv('SECRET_KEY')
 
@@ -95,7 +97,7 @@ def get_latest_weather():
         return jsonify(currentData), 200
     return jsonify({"error": "No data found"}), 404
 
-@app.route("/latest10", methods=["GET"])
+@app.route("/latest10temp", methods=["GET"])
 def get_latest_10_weather():
     """Lấy 10 dữ liệu thời tiết gần nhất"""
     latest_10 = list(collection.find(sort=[("timestamp", -1)]).limit(10))
@@ -104,8 +106,83 @@ def get_latest_10_weather():
     HDlatest_10 = list(HDcollection.find(sort=[("timestamp", -1)]).limit(10))
     for record in latest_10:
         record["_id"] = str(record["_id"])  # Chuyển ObjectId sang string
-    if latest_10:
-        return jsonify(latest_10), 200
+    
+    timestamp = []
+    LBlatest10temp = []
+    HDlatest10temp = []
+    HBTlatest10temp = []
+    for record in LBlatest_10:
+        timestamp.append(record["timestamp"])
+    for record in LBlatest_10:
+        LBlatest10temp.append(record["temp"])
+    for record in HDlatest_10:
+        HDlatest10temp.append(record["temp"])
+    for record in HBTlatest_10:
+        HBTlatest10temp.append(record["temp"])
+    LBdata = {
+        "label": "Long Bien",
+        "data": LBlatest10temp
+    }
+    HDdata = {
+        "label": "Ha Dong",
+        "data": HDlatest10temp
+    }
+    HBTdata = {
+        "label": "Hai Ba Trung",
+        "data": HBTlatest10temp
+    }
+
+    tempData = {
+        "labels": timestamp,
+        "datasets": [LBdata, HDdata, HBTdata]
+    }
+
+    if tempData:
+        return jsonify(tempData), 200
+    return jsonify({"error": "No data found"}), 404
+
+@app.route("/latest10pm25", methods=["GET"])
+def get_latest_10_weather_pm25():
+    """Lấy 10 dữ liệu thời tiết gần nhất PM25"""
+    latest_10 = list(collection.find(sort=[("timestamp", -1)]).limit(10))
+    LBlatest_10 = list(LBcollection.find(sort=[("timestamp", -1)]).limit(10))
+    HBTlatest_10 = list(HBTcollection.find(sort=[("timestamp", -1)]).limit(10))
+    HDlatest_10 = list(HDcollection.find(sort=[("timestamp", -1)]).limit(10))
+    for record in latest_10:
+        record["_id"] = str(record["_id"])  # Chuyển ObjectId sang string
+    
+    timestamp = []
+    LBlatest10pm25 = []
+    HDlatest10pm25 = []
+    HBTlatest10pm25 = []
+    for record in LBlatest_10:
+        timestamp.append(record["timestamp"])
+    for record in LBlatest_10:
+        LBlatest10pm25.append(record["pm25"])
+    for record in HDlatest_10:
+        HDlatest10pm25.append(record["pm25"])
+    for record in HBTlatest_10:
+        HBTlatest10pm25.append(record["pm25"])
+    LBdata = {
+        "label": "Long Bien",
+        "data": LBlatest10pm25  
+    }
+    HDdata = {
+        "label": "Ha Dong",
+        "data": HDlatest10pm25
+    }
+    HBTdata = {
+        "label": "Hai Ba Trung",
+        "data": HBTlatest10pm25
+    }
+
+    pm25Data = {
+        "labels": timestamp,
+        "datasets": [LBdata, HDdata, HBTdata]
+    }
+
+    if pm25Data:
+        return jsonify(pm25Data), 200
     return jsonify({"error": "No data found"}), 404
 
 @app.route("/add_fake_data", methods=["POST"])
